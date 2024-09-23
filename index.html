@@ -9,8 +9,8 @@
         #fileList { margin-top: 20px; }
         input, button { margin: 5px; }
         .menu { display: none; position: absolute; background: white; border: 1px solid #ccc; padding: 10px; z-index: 10; }
-        .file-item { position: relative; display: flex; justify-content: space-between; align-items: center; }
-        .options { cursor: pointer; margin-left: 5px; position: relative; left: -90px; }
+        .file-item { position: relative; display: flex; align-items: center; }
+        .options { cursor: pointer; margin-left: 10px; }
         .menu div { padding: 5px 10px; cursor: pointer; }
         .menu div:hover { background: #f0f0f0; }
     </style>
@@ -24,6 +24,8 @@
 
     <h2>File List</h2>
     <div id="fileList"></div>
+    <button onclick="deleteSelected()">Delete Selected</button>
+    <input type="checkbox" id="selectAll" onchange="toggleSelectAll()"> Select All
 
     <div class="menu" id="contextMenu">
         <div onclick="showRenamePrompt()">Rename</div>
@@ -49,6 +51,7 @@
                         const fileItem = document.createElement('div');
                         fileItem.className = 'file-item';
                         fileItem.innerHTML = `
+                            <input type="checkbox" class="file-checkbox" id="${file.name}">
                             <a href="${file.url}" target="_blank">${file.name}</a>
                             <button class="options" onclick="showMenu(event, '${file.name}')">⋮</button>
                         `;
@@ -85,6 +88,45 @@
             });
         }
 
+        function toggleSelectAll() {
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.file-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAllCheckbox.checked;
+            });
+        }
+
+        function deleteSelected() {
+            const checkboxes = document.querySelectorAll('.file-checkbox:checked');
+            const filesToDelete = Array.from(checkboxes).map(checkbox => checkbox.id);
+
+            if (filesToDelete.length > 0) {
+                const isConfirmed = filesToDelete.length === document.querySelectorAll('.file-checkbox').length 
+                    ? confirm("You are about to delete all files. Please enter password to confirm.") && promptPassword()
+                    : confirm("Are you sure you want to delete the selected files?");
+                
+                if (isConfirmed) {
+                    filesToDelete.forEach(file => deleteFile(file));
+                }
+            } else {
+                alert("No files selected for deletion.");
+            }
+        }
+
+        function promptPassword() {
+            const password = prompt("Enter password:");
+            return password === "0000"; // Change the password as needed
+        }
+
+        function deleteFile(fileName) {
+            fetch(`/files/${fileName || selectedFile}`, {
+                method: 'DELETE',
+            }).then(() => {
+                fetchFiles();
+                contextMenu.style.display = 'none'; // Close menu after deletion
+            });
+        }
+
         function showRenamePrompt() {
             const oldNameInput = document.getElementById('oldFileName');
             const newNameInput = document.getElementById('newFileName');
@@ -110,15 +152,6 @@
             }).then(() => {
                 fetchFiles();
                 contextMenu.style.display = 'none'; // Close menu after renaming
-            });
-        }
-
-        function deleteFile() {
-            fetch(`/files/${selectedFile}`, {
-                method: 'DELETE',
-            }).then(() => {
-                fetchFiles();
-                contextMenu.style.display = 'none'; // Close menu after deletion
             });
         }
 
