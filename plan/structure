@@ -1,0 +1,52 @@
+main/
+|--node generated file and folder
+|--node generated file and folder
+|--node generated file and folder
+|--.gitignore
+|--logEvents.js
+|--server.js
+|--views/
+       |--index.html
+       |--404.html
+       |--src/
+            |--uploads/
+            |--recyclebin/
+            |--css/
+                 |--bg.css (for all {body them})
+                 |--inner_bg.css (like group tag {group tag inside a body tag or inside a group tag. don't make this because i will make this or if not i will ask you})
+                 |--
+                 |--
+                 |--
+
+            |--js/
+                |--uplaod.js
+                |--ddlsr.js (delete,download,link share,rename)
+                |--rb.js (recyclebin)
+                |--
+                |--
+                |--
+                |--
+                |--
+                |--
+                |--
+                |--
+                |--
+                |--
+            |--html/
+                  |--social_media.html (SM|don't make an html for this i alreay make an html gor this)
+                  |--recyclebin.html in here to know or see the deleted items it detects if there is a file inside "recyclebin/"
+                  |--settings.html (don't make an html for this is juat for futrue feature)
+                  |--
+                  |--
+                  |--
+                  |--
+                  |--
+
+
+
+
+
+
+
+
+

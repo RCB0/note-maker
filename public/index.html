@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Manager</title>
+    <style>
+        body { font-family: Arial, sans-serif; }
+        #fileList { margin-top: 20px; }
+        input, button { margin: 5px; }
+        .menu { display: none; position: absolute; background: white; border: 1px solid #ccc; padding: 10px; }
+        .file-item { position: relative; display: inline-block; margin: 5px; }
+        .options { cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>File Manager</h1>
+
+    <h2>Upload File</h2>
+    <input type="file" id="fileInput">
+    <button onclick="uploadFile()">Upload</button>
+
+    <h2>File List</h2>
+    <div id="fileList"></div>
+
+    <div class="menu" id="contextMenu">
+        <div onclick="showRenamePrompt()">Rename</div>
+        <div onclick="deleteFile()">Delete</div>
+        <div onclick="shareFile()">Share</div>
+        <div onclick="downloadFile()">Download</div>
+    </div>
+
+    <input type="text" id="oldFileName" placeholder="Old File Name" style="display:none;">
+    <input type="text" id="newFileName" placeholder="New File Name" style="display:none;">
+
+    <script>
+        let selectedFile = '';
+
+        const fileListElement = document.getElementById('fileList');
+        const contextMenu = document.getElementById('contextMenu');
+
+        function fetchFiles() {
+            fetch('/files')
+                .then(response => response.json())
+                .then(files => {
+                    fileListElement.innerHTML = '';
+                    files.forEach(file => {
+                        const fileItem = document.createElement('div');
+                        fileItem.className = 'file-item';
+                        fileItem.innerHTML = `
+                            ${file.name} 
+                            <span class="options" onclick="showMenu(event, '${file.name}')">⋮</span>
+                        `;
+                        fileListElement.appendChild(fileItem);
+                    });
+                });
+        }
+
+        function showMenu(event, fileName) {
+            event.preventDefault();
+            selectedFile = fileName;
+            contextMenu.style.display = 'block';
+            contextMenu.style.left = `${event.pageX}px`;
+            contextMenu.style.top = `${event.pageY}px`;
+        }
+
+        document.addEventListener('click', () => {
+            contextMenu.style.display = 'none';
+        });
+
+        function uploadFile() {
+            const input = document.getElementById('fileInput');
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData,
+            }).then(() => {
+                fetchFiles();
+                input.value = '';
+            });
+        }
+
+        function showRenamePrompt() {
+            const oldNameInput = document.getElementById('oldFileName');
+            const newNameInput = document.getElementById('newFileName');
+
+            oldNameInput.style.display = 'inline';
+            newNameInput.style.display = 'inline';
+            oldNameInput.value = selectedFile;
+
+            newNameInput.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    renameFile(oldNameInput.value, newNameInput.value);
+                    oldNameInput.style.display = 'none';
+                    newNameInput.style.display = 'none';
+                }
+            };
+        }
+
+        function renameFile(oldName, newName) {
+            fetch(`/files/${oldName}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ newName }),
+            }).then(() => {
+                fetchFiles();
+            });
+        }
+
+        function deleteFile() {
+            fetch(`/files/${selectedFile}`, {
+                method: 'DELETE',
+            }).then(() => {
+                fetchFiles();
+            });
+        }
+
+        function shareFile() {
+            fetch(`/share/${selectedFile}`)
+                .then(response => response.json())
+                .then(data => {
+                    alert(`Shareable Link: ${data.shareUrl}`);
+                });
+        }
+
+        function downloadFile() {
+            window.location.href = `/uploads/${selectedFile}`;
+        }
+
+        // Fetch files on page load
+        window.onload = fetchFiles;
+    </script>
+</body>
+</html>

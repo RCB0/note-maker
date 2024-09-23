@@ -1,99 +1,82 @@
-const http = require('http');
-const path = require('path');
+const express = require('express');
+const multer = require('multer');
 const fs = require('fs');
-const fsPromises = require('fs').promises;
+const path = require('path');
+const app = express();
+const PORT = 3000;
 
-const logEvents = require('./logEvents');
-const EventEmitter = require('events');
-class Emitter extends EventEmitter { };
-// initialize object 
-const myEmitter = new Emitter();
-myEmitter.on('log', (msg, fileName) => logEvents(msg, fileName));
-const PORT = process.env.PORT || 3500;
-
-const serveFile = async (filePath, contentType, response) => {
-    try {
-        const rawData = await fsPromises.readFile(
-            filePath,
-            !contentType.includes('image') ? 'utf8' : ''
-        );
-        const data = contentType === 'application/json'
-            ? JSON.parse(rawData) : rawData;
-        response.writeHead(
-            filePath.includes('404.html') ? 404 : 200,
-            { 'Content-Type': contentType }
-        );
-        response.end(
-            contentType === 'application/json' ? JSON.stringify(data) : data
-        );
-    } catch (err) {
-        console.log(err);
-        myEmitter.emit('log', `${err.name}: ${err.message}`, 'errLog.txt');
-        response.statusCode = 500;
-        response.end();
-    }
-}
-
-const server = http.createServer((req, res) => {
-    console.log(req.url, req.method);
-    myEmitter.emit('log', `${req.url}\t${req.method}`, 'reqLog.txt');
-
-    const extension = path.extname(req.url);
-
-    let contentType;
-
-    switch (extension) {
-        case '.css':
-            contentType = 'text/css';
-            break;
-        case '.js':
-            contentType = 'text/javascript';
-            break;
-        case '.json':
-            contentType = 'application/json';
-            break;
-        case '.jpg':
-            contentType = 'image/jpeg';
-            break;
-        case '.png':
-            contentType = 'image/png';
-            break;
-        case '.txt':
-            contentType = 'text/plain';
-            break;
-        default:
-            contentType = 'text/html';
-    }
-
-    let filePath =
-        contentType === 'text/html' && req.url === '/'
-            ? path.join(__dirname, 'views', 'index.html')
-            : contentType === 'text/html' && req.url.slice(-1) === '/'
-                ? path.join(__dirname, 'views', req.url, 'index.html')
-                : contentType === 'text/html'
-                    ? path.join(__dirname, 'views', req.url)
-                    : path.join(__dirname, req.url);
-
-    // makes .html extension not required in the browser
-    if (!extension && req.url.slice(-1) !== '/') filePath += '.html';
-
-    const fileExists = fs.existsSync(filePath);
-
-    if (fileExists) {
-        serveFile(filePath, contentType, res);
-    } else {
-        switch (path.parse(filePath).base) {
-            case 'old-page.html':
-                res.writeHead(301, { 'Location': '/new-page.html' });
-                res.end();
-                break;
-            case 'www-page.html':
-                res.writeHead(301, { 'Location': '/' });
-                res.end();
-                break;
-            default:
-                serveFile(path.join(__dirname, 'views', '404.html'), 'text/html', res);
-        }
-    }
+// Set up storage for uploaded files
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + path.extname(file.originalname));
+  },
 });
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+const upload = multer({ storage });
+
+// Middleware to serve static files
+app.use('/uploads', express.static('uploads'));
+app.use(express.urlencoded({ extended: true }));
+
+// Upload file endpoint
+app.post('/upload', upload.single('file'), (req, res) => {
+  res.send('File uploaded successfully: ' + req.file.filename);
+});
+
+// List files endpoint
+app.get('/files', (req, res) => {
+  fs.readdir('uploads', (err, files) => {
+    if (err) return res.status(500).send('Unable to scan files!');
+
+    const fileList = files.map(file => ({
+      name: file,
+      url: `/uploads/${file}`,
+    }));
+    res.json(fileList);
+  });
+});
+
+// Delete file endpoint
+app.delete('/files/:filename', (req, res) => {
+  const filePath = path.join(__dirname, 'uploads', req.params.filename);
+  fs.unlink(filePath, (err) => {
+    if (err) return res.status(500).send('Unable to delete file!');
+    res.send('File deleted successfully');
+  });
+});
+
+// Rename file endpoint
+app.put('/files/:oldName', (req, res) => {
+  const oldPath = path.join(__dirname, 'uploads', req.params.oldName);
+  const newPath = path.join(__dirname, 'uploads', req.body.newName);
+
+  fs.rename(oldPath, newPath, (err) => {
+    if (err) return res.status(500).send('Unable to rename file!');
+    res.send('File renamed successfully to: ' + req.body.newName);
+  });
+});
+
+// Share file endpoint (returning a public URL)
+app.get('/share/:filename', (req, res) => {
+  const fileName = req.params.filename;
+  const filePath = path.join(__dirname, 'uploads', fileName);
+
+  fs.access(filePath, fs.constants.F_OK, (err) => {
+    if (err) return res.status(404).send('File not found!');
+    const shareUrl = `http://localhost:${PORT}/uploads/${fileName}`;
+    res.json({ shareUrl });
+  });
+});
+
+// Serve HTML file
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+  });
+  
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
