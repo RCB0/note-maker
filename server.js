@@ -2,10 +2,9 @@ const express = require('express');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
-const { logEvent } = require('./logEvents'); // Correctly import logEvent
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // Use environment variable for port
 
 // Set up storage for uploaded files
 const storage = multer.diskStorage({
@@ -79,5 +78,5 @@ app.get('/', (req, res) => {
 
 // Start the server
 app.listen(PORT, () => {
-    logEvent(`Server is running on http://localhost:${PORT}`); // Log server start event
+    console.log(`Server is running on http://localhost:${PORT}`); // Log server start event
 });
