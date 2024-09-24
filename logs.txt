@@ -1,13 +1,1 @@
-[2024-09-24T10:33:01.072Z] Server is running on http://localhost:3000
-[2024-09-24T10:33:10.062Z] HTML file served
-[2024-09-24T10:33:10.218Z] File list retrieved
-[2024-09-24T10:33:10.239Z] HTML file served
-[2024-09-24T10:33:11.055Z] HTML file served
-[2024-09-24T10:33:11.177Z] File list retrieved
-[2024-09-24T10:37:43.563Z] Server is running on http://localhost:3000
-[2024-09-24T10:37:58.281Z] HTML file served
-[2024-09-24T10:37:58.413Z] File list retrieved
-[2024-09-24T10:37:58.779Z] HTML file served
-[2024-09-24T10:37:59.564Z] HTML file served
-[2024-09-24T10:37:59.678Z] File list retrieved
-[2024-09-24T10:45:41.620Z] Server is running on http://localhost:3000
+[2024-09-24T10:46:19.073Z] Server is running on http://localhost:3000
