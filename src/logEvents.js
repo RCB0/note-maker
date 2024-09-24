@@ -1,15 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 
-// Log events function
+// Function to log events to a file
 const logEvent = (message) => {
-  const logFilePath = path.join(__dirname, 'logs.txt');
-  const logMessage = `[${new Date().toISOString()}] ${message}\n`;
-
-  // Append the log message to a log file
-  fs.appendFile(logFilePath, logMessage, (err) => {
-    if (err) throw err;
-  });
+    const dateTime = new Date().toISOString();
+    const logMessage = `${dateTime} - ${message}\n`;
+    fs.appendFile(path.join(__dirname, 'logs', 'eventLog.txt'), logMessage, (err) => {
+        if (err) {
+            console.error('Failed to log event:', err);
+        }
+    });
 };
 
-module.exports = logEvent;
+module.exports = { logEvent };

@@ -1,15 +1,22 @@
 const fs = require('fs');
 const path = require('path');
 
-// Log events function
-const logEvent = (message) => {
-  const logFilePath = path.join(__dirname, 'logs.txt');
-  const logMessage = `[${new Date().toISOString()}] ${message}\n`;
+const logDir = path.join(__dirname, 'logs');
 
-  // Append the log message to a log file
-  fs.appendFile(logFilePath, logMessage, (err) => {
-    if (err) throw err;
-  });
+// Check if logs directory exists, create it if it doesn't
+if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+}
+
+const logEvent = (message) => {
+    const logFilePath = path.join(logDir, 'eventLog.txt');
+    const logMessage = `${new Date().toISOString()} - ${message}\n`;
+
+    fs.appendFile(logFilePath, logMessage, (err) => {
+        if (err) {
+            console.error(`Failed to log event: ${err}`);
+        }
+    });
 };
 
-module.exports = logEvent;
+module.exports = { logEvent };
